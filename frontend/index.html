@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Explainable ML model for identifying inconsistent student academic performance with SHAP explanations">
+    <title>StudentIQ — Explainable ML for Student Performance</title>
+    <meta name="theme-color" content="#0A0A12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+
+    <!-- SCROLL PROGRESS BAR -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-brand">
+            <div class="brand-logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <defs>
+                        <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#6C63FF" />
+                            <stop offset="100%" style="stop-color:#00D4FF" />
+                        </linearGradient>
+                    </defs>
+                    <circle cx="16" cy="16" r="14" stroke="url(#logoGrad)" stroke-width="2.5" fill="none" />
+                    <path
+                        d="M10 16.5C10 13 12.5 10 16 10C19.5 10 22 13 22 16.5C22 18.5 21 20 19.5 21L19 22H13L12.5 21C11 20 10 18.5 10 16.5Z"
+                        fill="url(#logoGrad)" opacity="0.8" />
+                    <rect x="13" y="23" width="6" height="1.5" rx="0.75" fill="url(#logoGrad)" opacity="0.6" />
+                    <line x1="16" y1="6" x2="16" y2="8" stroke="url(#logoGrad)" stroke-width="1.5"
+                        stroke-linecap="round" />
+                    <line x1="22.5" y1="9.5" x2="21" y2="11" stroke="url(#logoGrad)" stroke-width="1.5"
+                        stroke-linecap="round" />
+                    <line x1="9.5" y1="9.5" x2="11" y2="11" stroke="url(#logoGrad)" stroke-width="1.5"
+                        stroke-linecap="round" />
+                </svg>
+            </div>
+            <span class="brand-text">Student<span class="brand-accent">IQ</span></span>
+        </div>
+        <div class="nav-links">
+            <a href="#" class="nav-link active" data-page="dashboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" />
+                </svg>
+                Dashboard
+            </a>
+            <a href="#" class="nav-link" data-page="students">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                Students
+            </a>
+            <a href="#" class="nav-link" data-page="upload">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Upload & Analyze
+            </a>
+            <a href="#" class="nav-link" data-page="models">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
+                </svg>
+                ML Models
+            </a>
+            <a href="#" class="nav-link" data-page="about">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                About
+            </a>
+        </div>
+        <div class="nav-hamburger" id="hamburger">
+            <span></span><span></span><span></span>
+        </div>
+    </nav>
+
+    <!-- MOBILE NAV -->
+    <div class="mobile-nav" id="mobileNav">
+        <a href="#" class="mobile-nav-link active" data-page="dashboard">Dashboard</a>
+        <a href="#" class="mobile-nav-link" data-page="students">Students</a>
+        <a href="#" class="mobile-nav-link" data-page="upload">Upload & Analyze</a>
+        <a href="#" class="mobile-nav-link" data-page="models">ML Models</a>
+        <a href="#" class="mobile-nav-link" data-page="about">About</a>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <!-- ═══ DASHBOARD ═══ -->
+        <section class="page active" id="page-dashboard">
+
+            <!-- Hero Section -->
+            <div class="hero-section">
+                <div class="hero-content">
+                    <div class="hero-badge">AI-Powered Analytics</div>
+                    <h1 class="hero-title">Identify Inconsistent<br><span class="gradient-text">Student
+                            Performance</span></h1>
+                    <p class="hero-subtitle">Leverage Random Forest, XGBoost & Logistic Regression with SHAP
+                        explanations to detect academic inconsistencies and provide actionable insights.</p>
+                    <div class="hero-actions">
+                        <button class="brutal-btn btn-primary btn-lg" onclick="navigateTo('students')">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                            </svg>
+                            Explore Students
+                        </button>
+                        <button class="brutal-btn btn-glass btn-lg" onclick="navigateTo('upload')">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            Upload CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <!-- SVG Illustration: Neural Network / Brain -->
+                    <svg class="hero-svg" viewBox="0 0 400 300" fill="none">
+                        <defs>
+                            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#6C63FF;stop-opacity:0.8" />
+                                <stop offset="100%" style="stop-color:#00D4FF;stop-opacity:0.4" />
+                            </linearGradient>
+                            <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" style="stop-color:#6C63FF;stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-color:#6C63FF;stop-opacity:0" />
+                            </radialGradient>
+                            <filter id="blur1">
+                                <feGaussianBlur stdDeviation="8" />
+                            </filter>
+                        </defs>
+                        <!-- Glow background -->
+                        <circle cx="200" cy="150" r="120" fill="url(#glow1)" />
+                        <!-- Network lines -->
+                        <g stroke="url(#grad1)" stroke-width="1.5" opacity="0.5">
+                            <line x1="80" y1="80" x2="160" y2="120" class="net-line" />
+                            <line x1="80" y1="200" x2="160" y2="170" class="net-line" />
+                            <line x1="160" y1="120" x2="240" y2="100" class="net-line" />
+                            <line x1="160" y1="170" x2="240" y2="150" class="net-line" />
+                            <line x1="160" y1="120" x2="240" y2="200" class="net-line" />
+                            <line x1="160" y1="170" x2="240" y2="100" class="net-line" />
+                            <line x1="240" y1="100" x2="320" y2="130" class="net-line" />
+                            <line x1="240" y1="150" x2="320" y2="130" class="net-line" />
+                            <line x1="240" y1="200" x2="320" y2="170" class="net-line" />
+                            <line x1="240" y1="150" x2="320" y2="170" class="net-line" />
+                        </g>
+                        <!-- Nodes -->
+                        <g class="net-nodes">
+                            <circle cx="80" cy="80" r="10" fill="#6C63FF" opacity="0.7" class="node-pulse" />
+                            <circle cx="80" cy="200" r="10" fill="#6C63FF" opacity="0.7" class="node-pulse" />
+                            <circle cx="80" cy="140" r="8" fill="#A855F7" opacity="0.5" class="node-pulse" />
+                            <circle cx="160" cy="120" r="12" fill="#8B5CF6" opacity="0.8" class="node-pulse" />
+                            <circle cx="160" cy="170" r="12" fill="#8B5CF6" opacity="0.8" class="node-pulse" />
+                            <circle cx="240" cy="100" r="14" fill="#00D4FF" opacity="0.7" class="node-pulse" />
+                            <circle cx="240" cy="150" r="10" fill="#00D4FF" opacity="0.6" class="node-pulse" />
+                            <circle cx="240" cy="200" r="14" fill="#00D4FF" opacity="0.7" class="node-pulse" />
+                            <circle cx="320" cy="130" r="16" fill="#34D399" opacity="0.8" class="node-pulse" />
+                            <circle cx="320" cy="170" r="16" fill="#FF5A5F" opacity="0.8" class="node-pulse" />
+                        </g>
+                        <!-- Labels -->
+                        <text x="320" y="126" fill="#34D399" font-size="8" font-family="Inter" font-weight="700"
+                            text-anchor="middle">OK</text>
+                        <text x="320" y="174" fill="#FF5A5F" font-size="7" font-family="Inter" font-weight="700"
+                            text-anchor="middle">RISK</text>
+                        <!-- Floating elements -->
+                        <rect x="40" y="240" width="70" height="35" rx="6" fill="rgba(108,99,255,0.15)"
+                            stroke="rgba(108,99,255,0.3)" stroke-width="1" class="float-el" />
+                        <text x="75" y="254" fill="#6C63FF" font-size="7" font-family="JetBrains Mono" font-weight="600"
+                            text-anchor="middle">SHAP</text>
+                        <text x="75" y="266" fill="#A0A0B0" font-size="6" font-family="Inter"
+                            text-anchor="middle">Explain</text>
+                        <rect x="280" y="30" width="80" height="35" rx="6" fill="rgba(52,211,153,0.15)"
+                            stroke="rgba(52,211,153,0.3)" stroke-width="1" class="float-el" />
+                        <text x="320" y="44" fill="#34D399" font-size="7" font-family="JetBrains Mono" font-weight="600"
+                            text-anchor="middle">RF · XGB</text>
+                        <text x="320" y="56" fill="#A0A0B0" font-size="6" font-family="Inter" text-anchor="middle">3
+                            Models</text>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card stat-blue">
+                    <div class="stat-icon-wrap stat-icon-blue">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                    </div>
+                    <div class="stat-value" id="totalStudents">—</div>
+                    <div class="stat-label">Total Students</div>
+                    <div class="stat-trend stat-trend-up">Analyzed</div>
+                </div>
+                <div class="stat-card stat-red">
+                    <div class="stat-icon-wrap stat-icon-red">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                    </div>
+                    <div class="stat-value" id="inconsistentCount">—</div>
+                    <div class="stat-label">Inconsistent</div>
+                    <div class="stat-trend stat-trend-alert">Flagged</div>
+                </div>
+                <div class="stat-card stat-green">
+                    <div class="stat-icon-wrap stat-icon-green">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                    </div>
+                    <div class="stat-value" id="consistentCount">—</div>
+                    <div class="stat-label">Consistent</div>
+                    <div class="stat-trend stat-trend-up">Stable</div>
+                </div>
+                <div class="stat-card stat-purple">
+                    <div class="stat-icon-wrap stat-icon-purple">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                            <line x1="12" y1="22.08" x2="12" y2="12" />
+                        </svg>
+                    </div>
+                    <div class="stat-value" id="inconsistentPct">—</div>
+                    <div class="stat-label">Inconsistency Rate</div>
+                    <div class="stat-trend">Of Total</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"
+                            stroke-width="2">
+                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                            <path d="M22 12A10 10 0 0 0 12 2v10z" />
+                        </svg>
+                        Consistency Distribution
+                    </div>
+                    <div class="chart-wrap"><canvas id="distributionChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)"
+                            stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <path d="M7 17V13" />
+                            <path d="M12 17V9" />
+                            <path d="M17 17V7" />
+                        </svg>
+                        Department Distribution
+                    </div>
+                    <div class="chart-wrap"><canvas id="departmentChart"></canvas></div>
+                </div>
+                <div class="chart-card chart-full">
+                    <div class="chart-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink)"
+                            stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        </svg>
+                        Feature Importance (SHAP)
+                    </div>
+                    <div class="chart-wrap chart-wrap-lg"><canvas id="featureChart"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ STUDENTS ═══ -->
+        <section class="page" id="page-students">
+            <div class="page-header">
+                <div class="page-header-row">
+                    <div>
+                        <h1>Students</h1>
+                        <p class="page-subtitle">Browse, search, and analyze individual student performance data</p>
+                    </div>
+                    <button class="brutal-btn btn-glass" id="exportBtn" onclick="exportStudents()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="filters-bar">
+                <div class="search-wrap">
+                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <input type="text" class="brutal-input search-input" id="searchInput"
+                        placeholder="Search by name or ID...">
+                </div>
+                <select class="brutal-select" id="filterSelect">
+                    <option value="">All Students</option>
+                    <option value="inconsistent">Inconsistent Only</option>
+                    <option value="consistent">Consistent Only</option>
+                </select>
+                <select class="brutal-select" id="deptSelect">
+                    <option value="">All Departments</option>
+                </select>
+            </div>
+
+            <div class="table-card">
+                <table class="brutal-table">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Latest GPA</th>
+                            <th>Status</th>
+                            <th>Confidence</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsBody">
+                        <!-- Skeleton loader -->
+                        <tr class="skeleton-row">
+                            <td colspan="7">
+                                <div class="skeleton-line"></div>
+                            </td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td colspan="7">
+                                <div class="skeleton-line"></div>
+                            </td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td colspan="7">
+                                <div class="skeleton-line"></div>
+                            </td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td colspan="7">
+                                <div class="skeleton-line"></div>
+                            </td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td colspan="7">
+                                <div class="skeleton-line"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="pagination" class="pagination"></div>
+        </section>
+
+        <!-- ═══ UPLOAD & ANALYZE ═══ -->
+        <section class="page" id="page-upload">
+            <div class="page-header">
+                <h1>Upload & Analyze</h1>
+                <p class="page-subtitle">Upload a CSV file or manually enter features for instant ML predictions</p>
+            </div>
+
+            <div class="upload-grid">
+                <!-- CSV Upload -->
+                <div class="upload-card">
+                    <div class="card-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"
+                            stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                            <polyline points="10 9 9 9 8 9" />
+                        </svg>
+                        CSV File Upload
+                    </div>
+                    <div class="dropzone" id="dropzone">
+                        <div class="dropzone-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"
+                                stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                        </div>
+                        <div class="dropzone-text">Drop your CSV file here</div>
+                        <div class="dropzone-sub">or click to browse · CSV format required</div>
+                        <input type="file" id="csvInput" accept=".csv" hidden>
+                    </div>
+                    <div class="upload-status" id="uploadStatus"></div>
+                    <div class="required-cols">
+                        <div class="required-cols-title">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            Required columns
+                        </div>
+                        <div class="required-cols-list" id="requiredColsList"></div>
+                    </div>
+                </div>
+
+                <!-- Manual Input -->
+                <div class="upload-card">
+                    <div class="card-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)"
+                            stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                        Manual Feature Input
+                    </div>
+                    <form id="manualForm" class="manual-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Mean Attendance</label>
+                                <input type="number" name="mean_attendance" class="brutal-input" step="0.01" value="75"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Std Attendance</label>
+                                <input type="number" name="std_attendance" class="brutal-input" step="0.01" value="8"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mean Assignment</label>
+                                <input type="number" name="mean_assignment" class="brutal-input" step="0.01" value="70"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Std Assignment</label>
+                                <input type="number" name="std_assignment" class="brutal-input" step="0.01" value="10"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mean Midterm</label>
+                                <input type="number" name="mean_midterm" class="brutal-input" step="0.01" value="65"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Std Midterm</label>
+                                <input type="number" name="std_midterm" class="brutal-input" step="0.01" value="12"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mean Final</label>
+                                <input type="number" name="mean_final" class="brutal-input" step="0.01" value="68"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Std Final</label>
+                                <input type="number" name="std_final" class="brutal-input" step="0.01" value="11"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mean GPA</label>
+                                <input type="number" name="mean_gpa" class="brutal-input" step="0.01" value="3.0"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Std GPA</label>
+                                <input type="number" name="std_gpa" class="brutal-input" step="0.01" value="0.5"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>GPA Range</label>
+                                <input type="number" name="gpa_range" class="brutal-input" step="0.01" value="1.2"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mean Study Hours</label>
+                                <input type="number" name="mean_study_hours" class="brutal-input" step="0.01" value="15"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Std Study Hours</label>
+                                <input type="number" name="std_study_hours" class="brutal-input" step="0.01" value="5"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Max GPA Drop</label>
+                                <input type="number" name="max_gpa_drop" class="brutal-input" step="0.01" value="0.5"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Attend-Score Corr</label>
+                                <input type="number" name="attendance_score_corr" class="brutal-input" step="0.01"
+                                    value="0.3" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Avg Extracurricular</label>
+                                <input type="number" name="avg_extracurricular" class="brutal-input" step="0.01"
+                                    value="2" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Has Part-time Job</label>
+                                <select name="has_part_time" class="brutal-select">
+                                    <option value="0">No</option>
+                                    <option value="1">Yes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="brutal-btn btn-primary" style="width:100%;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                            </svg>
+                            Run Prediction
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Results Area -->
+            <div class="results-area" id="resultsArea" style="display:none;">
+                <div class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    Prediction Results
+                </div>
+                <div id="predictionResults"></div>
+            </div>
+        </section>
+
+        <!-- ═══ ML MODELS ═══ -->
+        <section class="page" id="page-models">
+            <div class="page-header">
+                <h1>ML Models</h1>
+                <p class="page-subtitle">Performance metrics, comparison charts, and confusion matrices for each trained
+                    model</p>
+            </div>
+
+            <div class="models-grid" id="modelsGrid">
+                <!-- Skeleton -->
+                <div class="model-card">
+                    <div class="skeleton-block"></div>
+                </div>
+                <div class="model-card">
+                    <div class="skeleton-block"></div>
+                </div>
+                <div class="model-card">
+                    <div class="skeleton-block"></div>
+                </div>
+            </div>
+
+            <div class="chart-card" style="margin-bottom:2rem;">
+                <div class="chart-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <path d="M7 17V13" />
+                        <path d="M12 17V9" />
+                        <path d="M17 17V7" />
+                    </svg>
+                    Model Comparison
+                </div>
+                <div class="chart-wrap chart-wrap-lg"><canvas id="modelComparisonChart"></canvas></div>
+            </div>
+
+            <div class="confusion-section">
+                <div class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                    </svg>
+                    Confusion Matrices
+                </div>
+                <div class="confusion-grid" id="confusionGrid"></div>
+            </div>
+        </section>
+
+        <!-- ═══ ABOUT ═══ -->
+        <section class="page" id="page-about">
+            <div class="page-header">
+                <h1>About StudentIQ</h1>
+                <p class="page-subtitle">Understanding the system, methodology, and technology behind the predictions
+                </p>
+            </div>
+
+            <div class="about-hero">
+                <div class="about-hero-content">
+                    <h2>Explainable Machine Learning for<br><span class="gradient-text">Identifying Inconsistent Student
+                            Performance</span></h2>
+                    <p>A final year research project that combines advanced classification algorithms with interpretable
+                        AI techniques to detect and explain irregular patterns in student academic data.</p>
+                </div>
+                <div class="about-hero-visual">
+                    <svg viewBox="0 0 200 200" fill="none" class="about-svg">
+                        <defs>
+                            <linearGradient id="aboutGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#A855F7;stop-opacity:0.6" />
+                                <stop offset="100%" style="stop-color:#6C63FF;stop-opacity:0.3" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="100" cy="100" r="80" stroke="url(#aboutGrad)" stroke-width="1.5" fill="none"
+                            stroke-dasharray="4 6" class="rotate-slow" />
+                        <circle cx="100" cy="100" r="60" stroke="url(#aboutGrad)" stroke-width="1" fill="none"
+                            stroke-dasharray="2 8" class="rotate-slow-reverse" />
+                        <circle cx="100" cy="60" r="8" fill="#A855F7" opacity="0.7" class="node-pulse" />
+                        <circle cx="60" cy="120" r="8" fill="#6C63FF" opacity="0.7" class="node-pulse" />
+                        <circle cx="140" cy="120" r="8" fill="#00D4FF" opacity="0.7" class="node-pulse" />
+                        <circle cx="100" cy="100" r="14" fill="rgba(108,99,255,0.2)" stroke="#6C63FF"
+                            stroke-width="1.5" />
+                        <text x="100" y="104" fill="#6C63FF" font-size="10" font-family="Inter" font-weight="800"
+                            text-anchor="middle">AI</text>
+                        <line x1="100" y1="68" x2="100" y2="86" stroke="#A855F7" stroke-width="1" opacity="0.5" />
+                        <line x1="68" y1="120" x2="86" y2="108" stroke="#6C63FF" stroke-width="1" opacity="0.5" />
+                        <line x1="132" y1="120" x2="114" y2="108" stroke="#00D4FF" stroke-width="1" opacity="0.5" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="about-content">
+                <!-- How It Works -->
+                <div class="about-card">
+                    <div class="about-card-icon" style="background:var(--blue-light);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                    </div>
+                    <h3>How It Works</h3>
+                    <div class="about-steps">
+                        <div class="step">
+                            <div class="step-num">1</div>
+                            <div><strong>Data Collection</strong> — Student records across multiple semesters including
+                                GPA, attendance, scores, and extracurricular activities are aggregated into feature
+                                vectors.</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-num">2</div>
+                            <div><strong>Feature Engineering</strong> — 17 statistical features are computed: means,
+                                standard deviations, trends, correlations, and behavioral indicators.</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-num">3</div>
+                            <div><strong>ML Classification</strong> — Three models (Random Forest, XGBoost, Logistic
+                                Regression) classify students as consistent or inconsistent performers.</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-num">4</div>
+                            <div><strong>SHAP Explanation</strong> — SHAP values reveal which features contributed most
+                                to each prediction, making the AI decision transparent and interpretable.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Used -->
+                <div class="about-card">
+                    <div class="about-card-icon" style="background:var(--green-light);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)"
+                            stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        </svg>
+                    </div>
+                    <h3>17 Engineered Features</h3>
+                    <p>The model analyzes these computed statistical features derived from raw student records:</p>
+                    <div class="feature-tags" id="featureTags"></div>
+                </div>
+
+                <!-- Tech Stack -->
+                <div class="about-card">
+                    <div class="about-card-icon" style="background:var(--purple-light);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--purple)"
+                            stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                            <path d="M2 17l10 5 10-5" />
+                            <path d="M2 12l10 5 10-5" />
+                        </svg>
+                    </div>
+                    <h3>Technology Stack</h3>
+                    <div class="tech-grid">
+                        <div class="tech-item">
+                            <strong>Backend</strong><span>Python · Flask · SQLAlchemy</span>
+                        </div>
+                        <div class="tech-item">
+                            <strong>ML Models</strong><span>Random Forest · XGBoost · Logistic Regression</span>
+                        </div>
+                        <div class="tech-item">
+                            <strong>Explainability</strong><span>SHAP (SHapley Additive exPlanations)</span>
+                        </div>
+                        <div class="tech-item">
+                            <strong>Frontend</strong><span>HTML · CSS · JavaScript · Chart.js</span>
+                        </div>
+                        <div class="tech-item">
+                            <strong>Database</strong><span>SQLite with SQLAlchemy ORM</span>
+                        </div>
+                        <div class="tech-item">
+                            <strong>Data Science</strong><span>pandas · NumPy · scikit-learn</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Research Context -->
+                <div class="about-card">
+                    <div class="about-card-icon" style="background:var(--pink-light);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--pink)"
+                            stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                        </svg>
+                    </div>
+                    <h3>Research Context</h3>
+                    <p>This system addresses a critical gap in educational analytics: the inability to explain
+                        <em>why</em> an ML model flags a student as inconsistent. Traditional approaches treat models as
+                        black boxes, but StudentIQ provides full transparency through SHAP-based explanations.</p>
+                    <p>By combining high-accuracy ensemble methods with interpretable AI, educators can make informed,
+                        data-driven decisions about student interventions while understanding the reasoning behind each
+                        recommendation.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- STUDENT DETAIL MODAL -->
+    <div class="modal-overlay" id="studentModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
+            <div id="studentDetail">
+                <div class="loading">Loading student data</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="14" stroke="url(#logoGrad)" stroke-width="2" fill="none" />
+                    <path
+                        d="M10 16.5C10 13 12.5 10 16 10C19.5 10 22 13 22 16.5C22 18.5 21 20 19.5 21L19 22H13L12.5 21C11 20 10 18.5 10 16.5Z"
+                        fill="url(#logoGrad)" opacity="0.6" />
+                </svg>
+                StudentIQ
+            </div>
+            <div class="footer-text">Explainable ML for Student Performance · Final Year Project · 2026</div>
+            <div class="footer-links">
+                <span>Built with Flask · scikit-learn · SHAP · Chart.js</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
