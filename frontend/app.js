@@ -197,8 +197,12 @@ async function apiUpload(endpoint, formData) {
             method: 'POST',
             body: formData,
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
+        const json = await res.json();
+        if (!res.ok) {
+            showToast(json.error || `Upload failed (HTTP ${res.status})`, 'error');
+            return json;
+        }
+        return json;
     } catch (err) {
         console.error(`API Error: ${endpoint}`, err);
         showToast('Upload failed. Check backend connection.', 'error');

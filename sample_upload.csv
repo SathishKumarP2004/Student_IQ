@@ -1,0 +1,6 @@
+student_id,mean_attendance,std_attendance,mean_assignment,std_assignment,mean_midterm,std_midterm,mean_final,std_final,mean_gpa,std_gpa,gpa_range,mean_study_hours,std_study_hours,max_gpa_drop,attendance_score_corr,avg_extracurricular,has_part_time
+STU_SAMPLE_001,85.5,3.2,78.0,5.1,82.3,4.5,80.1,3.8,3.25,0.12,0.35,15.0,1.5,0.2,0.45,2.5,0
+STU_SAMPLE_002,55.2,18.5,60.3,22.1,48.7,25.3,52.1,20.8,2.1,0.65,1.9,8.5,6.2,1.5,0.15,1.0,1
+STU_SAMPLE_003,92.0,2.1,95.5,3.0,94.8,2.5,96.2,1.8,3.85,0.05,0.15,20.0,1.2,0.08,0.7,3.0,0
+STU_SAMPLE_004,70.0,15.0,65.0,20.0,58.0,22.0,72.0,18.0,2.65,0.55,1.5,12.0,5.5,1.0,0.3,2.0,1
+STU_SAMPLE_005,88.3,4.0,82.5,4.8,85.0,3.9,83.2,5.5,3.35,0.13,0.38,16.5,1.8,0.15,0.55,2.7,0
