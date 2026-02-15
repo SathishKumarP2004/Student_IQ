@@ -57,6 +57,84 @@ def create_app():
         print(f"[WARNING] Could not load some models: {e}")
         print("  Run train_models.py first!")
 
+    # Auto-seed database if empty (needed for Render / fresh deploys)
+    with app.app_context():
+        db.create_all()
+        if Student.query.count() == 0:
+            print("[INFO] Empty database detected - auto-seeding...")
+            try:
+                from generate_data import generate_student_records
+                students_data = generate_student_records()
+
+                for stu in students_data:
+                    student = Student(
+                        student_id=stu['student_id'],
+                        name=stu['name'],
+                        enrollment_year=stu['enrollment_year'],
+                        department=stu['department'],
+                    )
+                    db.session.add(student)
+                    db.session.flush()
+
+                    for sem in stu['semesters']:
+                        record = SemesterRecord(
+                            student_id=student.id,
+                            semester=sem['semester'],
+                            attendance_pct=sem['attendance_pct'],
+                            assignment_score=sem['assignment_score'],
+                            midterm_score=sem['midterm_score'],
+                            final_score=sem['final_score'],
+                            gpa=sem['gpa'],
+                            study_hours_weekly=sem['study_hours_weekly'],
+                            extracurricular_activities=sem['extracurricular_activities'],
+                            part_time_job=sem['part_time_job'],
+                        )
+                        db.session.add(record)
+
+                    # Auto-predict using Random Forest
+                    rf = loaded_models.get('Random Forest')
+                    if rf:
+                        sems = stu['semesters']
+                        attendances = [s['attendance_pct'] for s in sems]
+                        assignments = [s['assignment_score'] for s in sems]
+                        midterms = [s['midterm_score'] for s in sems]
+                        finals = [s['final_score'] for s in sems]
+                        gpas = [s['gpa'] for s in sems]
+                        study_hrs = [s['study_hours_weekly'] for s in sems]
+
+                        features = np.array([[
+                            np.mean(attendances), np.std(attendances),
+                            np.mean(assignments), np.std(assignments),
+                            np.mean(midterms), np.std(midterms),
+                            np.mean(finals), np.std(finals),
+                            np.mean(gpas), np.std(gpas),
+                            max(gpas) - min(gpas),
+                            np.mean(study_hrs), np.std(study_hrs),
+                            max(gpas[j] - gpas[j+1] for j in range(len(gpas)-1)) if len(gpas) > 1 else 0,
+                            float(np.corrcoef(attendances, finals)[0, 1]) if np.std(attendances) > 0 and np.std(finals) > 0 else 0,
+                            np.mean([s['extracurricular_activities'] for s in sems]),
+                            int(any(s['part_time_job'] for s in sems)),
+                        ]])
+
+                        pred = int(rf.predict(features)[0])
+                        conf = float(rf.predict_proba(features)[0][1])
+
+                        prediction = Prediction(
+                            student_db_id=student.id,
+                            model_name='Random Forest',
+                            inconsistency_label=pred,
+                            confidence=round(conf, 4),
+                        )
+                        db.session.add(prediction)
+
+                db.session.commit()
+                print(f"[OK] Auto-seeded {len(students_data)} students with predictions")
+            except Exception as e:
+                db.session.rollback()
+                print(f"[WARNING] Auto-seed failed: {e}")
+        else:
+            print(f"[OK] Database has {Student.query.count()} students")
+
     # ─── Health Check ─────────────────────────────────────────
     @app.route('/api/health', methods=['GET'])
     def health():
