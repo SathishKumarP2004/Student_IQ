@@ -237,12 +237,15 @@ def create_app():
             # SHAP explanation using Random Forest
             shap_vals = None
             if shap_explainer:
-                sv = shap_explainer.shap_values(features)
-                if isinstance(sv, list):
-                    sv = sv[1]
-                elif hasattr(sv, 'ndim') and sv.ndim == 3:
-                    sv = sv[:, :, 1]
-                shap_vals = {feat: round(float(sv[0][j]), 4) for j, feat in enumerate(FEATURE_COLS)}
+                try:
+                    sv = shap_explainer.shap_values(features)
+                    if isinstance(sv, list):
+                        sv = sv[1]
+                    elif hasattr(sv, 'ndim') and sv.ndim == 3:
+                        sv = sv[:, :, 1]
+                    shap_vals = {feat: round(float(sv[0][j]), 4) for j, feat in enumerate(FEATURE_COLS)}
+                except Exception:
+                    shap_vals = None
 
             return jsonify({
                 'predictions': results,
@@ -285,15 +288,18 @@ def create_app():
             # SHAP for batch
             shap_batch = None
             if shap_explainer:
-                sv = shap_explainer.shap_values(X)
-                if isinstance(sv, list):
-                    sv = sv[1]
-                elif hasattr(sv, 'ndim') and sv.ndim == 3:
-                    sv = sv[:, :, 1]
-                shap_batch = [
-                    {feat: round(float(sv[i][j]), 4) for j, feat in enumerate(FEATURE_COLS)}
-                    for i in range(len(X))
-                ]
+                try:
+                    sv = shap_explainer.shap_values(X)
+                    if isinstance(sv, list):
+                        sv = sv[1]
+                    elif hasattr(sv, 'ndim') and sv.ndim == 3:
+                        sv = sv[:, :, 1]
+                    shap_batch = [
+                        {feat: round(float(sv[i][j]), 4) for j, feat in enumerate(FEATURE_COLS)}
+                        for i in range(len(X))
+                    ]
+                except Exception:
+                    shap_batch = None
 
             results = []
             for i in range(len(df)):
